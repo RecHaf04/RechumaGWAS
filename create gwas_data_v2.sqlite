@@ -1,0 +1,79 @@
+# --- 1. Load Libraries ---
+library(DBI)
+library(RSQLite)
+library(data.table)
+library(dplyr)
+library(purrr) # For safely handling loops
+
+# --- 2. Configuration ---
+
+# The path to the V2 database file we are creating
+database_file_path <- "gwas_data_v2.sqlite"
+
+# The base path where all the individual GWAS data folders are located.
+base_data_path <- "/sc/arion/projects/AsgariLab/abhijith/gwas_All_ID/saige_gwas"
+
+# The name of the data file inside each folder.
+data_filename <- "gwas_meta_biome1.tsv"
+
+# The list of all datasets to process.
+# To add a new study, a new entry must be added to this list.
+datasets_to_process <- list(
+  list(folder_name = "gwas_ID_002.1_Staphylococcus_aureus_minCodeCount1", table_name = "staph_aureus"),
+  list(folder_name = "gwas_ID_002_Staphylococcus_minCodeCount1", table_name = "staphylococcus"),
+  list(folder_name = "gwas_ID_003_Escherichia_coli_minCodeCount1", table_name = "escherichia_coli"),
+  # ... and so on for all 70+ datasets ...
+  list(folder_name = "gwas_ID_097_Drug_resistant_microorganisms_minCodeCount1", table_name = "drug_resistance")
+)
+
+# --- 3. The Batch Processing Function ---
+
+add_gwas_to_db <- function(dataset_info, db_con) {
+  
+  source_tsv_path <- file.path(base_data_path, dataset_info$folder_name, data_filename)
+  table_name <- dataset_info$table_name
+  
+  message("\n--- Processing: ", table_name, " ---")
+  
+  if (!file.exists(source_tsv_path)) {
+    warning("File not found, skipping: ", source_tsv_path)
+    return(NULL)
+  }
+  
+  # Check if table already exists
+  existing_tables <- dbListTables(db_con)
+  if (table_name %in% existing_tables) {
+    message("Table '", table_name, "' already exists. Skipping.")
+    return(NULL)
+  }
+  
+  message("Reading TSV file...")
+  gwas_data <- fread(source_tsv_path)
+  
+  message("Calculating LOG10P values...")
+  gwas_data_with_log10p <- gwas_data %>%
+    rename(P_value = `P-value`) %>%
+    mutate(LOG10P = -log10(P_value + .Machine$double.eps))
+  
+  message("Writing data to table '", table_name, "'. This may take time...")
+  dbWriteTable(db_con, table_name, as.data.frame(gwas_data_with_log10p), overwrite = FALSE, append = TRUE)
+  
+  message("Creating index on LOG10P column...")
+  dbExecute(db_con, paste0("CREATE INDEX idx_log10p_", table_name, " ON ", table_name, " (LOG10P);"))
+  
+  message("--- Successfully added: ", table_name, " ---")
+}
+
+# --- 4. Main Execution ---
+
+# Connect to the database
+con <- dbConnect(RSQLite::SQLite(), database_file_path)
+
+# Safely loop through each dataset and process it
+safe_add_gwas_to_db <- safely(add_gwas_to_db)
+walk(datasets_to_process, ~ safe_add_gwas_to_db(.x, db_con = con))
+
+# Disconnect from the database
+dbDisconnect(con)
+
+message("\n--- BATCH PROCESSING COMPLETE ---")
