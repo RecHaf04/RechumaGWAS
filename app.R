@@ -9,254 +9,342 @@ library(shinycssloaders)
 library(httr)
 library(jsonlite)
 library(htmlwidgets)
-
+library(readr)
+library(tibble)
+library(plotly)
+library(DBI)
+library(RSQLite)
 # --- 2. DATA & CONFIG ---
-# This list populates your dropdown menu.
-dataset_catalog <- list(
-  list(id = "staph_aureus", trait = "Staph Aureus"),
-  list(id = "staphylococcus", trait = "Staphylococcus"),
-  list(id = "escherichia_coli", trait = "Escherichia Coli"),
-  list(id = "group_a_streptococcus", trait = "Group A Streptococcus"),
-  list(id = "group_b_streptococcus", trait = "Group B Streptococcus"),
-  list(id = "streptococcus", trait = "Streptococcus"),
-  list(id = "mycobacterium_tuberculosis", trait = "Mycobacterium Tuberculosis"),
-  list(id = "mycobacteria", trait = "Mycobacteria"),
-  list(id = "neisseria_gonorrhea", trait = "Neisseria Gonorrhea"),
-  list(id = "neisseria", trait = "Neisseria"),
-  list(id = "H_pylori", trait = "H. pylori"),
-  list(id = "clostridium_difficile", trait = "Clostridium Difficile"),
-  list(id = "clostridium", trait = "Clostridium"),
-  list(id = "chlamydia_trachomatis", trait = "Chlamydia Trachomatis"),
-  list(id = "chlamydia", trait = "Chlamydia"),
-  list(id = "treponema_pallidum", trait = "Treponema Pallidum (Syphilis)"),
-  list(id = "treponema", trait = "Treponema"),
-  list(id = "lyme_disease", trait = "Lyme Disease"),
-  list(id = "borrelia", trait = "Borrelia"),
-  list(id = "enterovirus", trait = "Enterovirus"),
-  list(id = "herpes_simplex", trait = "Herpes Simplex"),
-  list(id = "varicella_chickenpox", trait = "Varicella (Chickenpox)"),
-  list(id = "herpes_zoster", trait = "Herpes Zoster"),
-  list(id = "varicella_zoster", trait = "Varicella Zoster Virus"),
-  list(id = "infectious_mono", trait = "Infectious Mononucleosis"),
-  list(id = "cytomegalovirus", trait = "Cytomegalovirus (CMV)"),
-  list(id = "herpesvirus", trait = "Herpesvirus"),
-  list(id = "hepatitis_a", trait = "Hepatitis A"),
-  list(id = "hepatitis_b_with_delta", trait = "Hepatitis B with Delta"),
-  list(id = "hepatitis_b", trait = "Hepatitis B"),
-  list(id = "chronic_hepatitis_c", trait = "Chronic Hepatitis C"),
-  list(id = "acute_hepatitis_c", trait = "Acute Hepatitis C"),
-  list(id = "hepatitis_c", trait = "Hepatitis C"),
-  list(id = "hepatovirus", trait = "Hepatovirus"),
-  list(id = "molluscum_cont", trait = "Molluscum Contagiosum"),
-  list(id = "poxvirus", trait = "Poxvirus"),
-  list(id = "plantar_wart", trait = "Plantar Wart"),
-  list(id = "anogenital_warts", trait = "Anogenital Warts"),
-  list(id = "hpv", trait = "Human Papillomavirus"),
-  list(id = "hiv", trait = "Human Immunodeficiency Virus"),
-  list(id = "retrovirus", trait = "Retrovirus"),
-  list(id = "pneumo", trait = "Pneumoviridae"),
-  list(id = "cov2", trait = "Sars-CoV-2"),
-  list(id = "corona", trait = "Coronavirus"),
-  list(id = "influenza", trait = "Influenza Virus"),
-  list(id = "other_viral", trait = "Other Specified Viral Infections"),
-  list(id = "candidiasis", trait = "Candidiasis"),
-  list(id = "aspergillosis", trait = "Aspergillosis"),
-  list(id = "pneumocystosis", trait = "Pneumocystosis"),
-  list(id = "trichomoniasis", trait = "Trichomoniasis"),
-  list(id = "toxoplasmosis", trait = "Toxoplasmosis"),
-  list(id = "giardiasis", trait = "Giardiasis"),
-  list(id = "parasites", trait = "Parasites"),
-  list(id = "scabies", trait = "Scabies"),
-  list(id = "pediculosis_acarisis_other", trait = "Pediculosis, Acariasis, Other"),
-  list(id = "std", trait = "Sexually Transmitted Disease"),
-  list(id = "bacterial_infections", trait = "Bacterial Infections"),
-  list(id = "viral_infections", trait = "Viral Infections"),
-  list(id = "fungal_infections", trait = "Fungal Infections"),
-  list(id = "infections", trait = "Infections"),
-  list(id = "gangrene", trait = "Gangrene"),
-  list(id = "systemic_inflammatory_response", trait = "Systemic Inflammatory Response"),
-  list(id = "sepsis", trait = "Sepsis"),
-  list(id = "bacteremia", trait = "Bacteremia"),
-  list(id = "bacteremia_sepsis_sirs", trait = "Bacteremia, Sepsis, and SIRS"),
-  list(id = "mrsa", trait = "Methicillin-resistant Staphylococcus aureus"),
-  list(id = "beta_lactam_resistance", trait = "Resistance to Beta-lactam Antibiotics"),
-  list(id = "drug_resistance", trait = "Drug Resistant Microorganisms")
-)
-# This file needs to be in the same directory as app.R
-chr_map <- readRDS("chr_map.rds")
 
-# --- 3. UI ---
+# This is your central summary details file, linked by PheCode.
+# For now, we create it as a dummy data frame. Later, you can replace this
+# with: study_metadata <- read_csv("your_summary_details_file.csv")
+study_metadata <- tibble::tribble(
+  ~StudyID, ~PheCode, ~Ancestry, ~Cases, ~Controls, ~TraitName,
+  "staph_aureus", "ID_002.1", "European", 1204, 50000, "Staphylococcus aureus",
+  "staphylococcus", "ID_002", "European", 850, 45000, "Staphylococcus",
+  "escherichia_coli", "ID_003", "Mixed", 2500, 98000, "Escherichia coli",
+  "streptococcus", "ID_004", NA, NA, NA, "Streptococcus",
+  "group_a_streptococcus", "ID_004.2", NA, NA, NA, "Group A Streptococcus",
+  "group_b_streptococcus", "ID_004.3", NA, NA, NA, "Group B Streptococcus",
+  "mycobacteria", "ID_005", NA, NA, NA, "Mycobacteria",
+  "mycobacterium_tuberculosis", "ID_005.1", NA, NA, NA, "Mycobacterium tuberculosis",
+  "neisseria", "ID_006", NA, NA, NA, "Neisseria",
+  "neisseria_gonorrhea", "ID_006.2", NA, NA, NA, "Neisseria gonorrhea",
+  "H_pylori", "ID_008", NA, NA, NA, "Helicobacter pylori",
+  "clostridium", "ID_015", NA, NA, NA, "Clostridium",
+  "clostridium_difficile", "ID_015.2", NA, NA, NA, "Clostridium difficile",
+  "chlamydia", "ID_016", NA, NA, NA, "Chlamydia",
+  "chlamydia_trachomatis", "ID_016.1", NA, NA, NA, "Chlamydia trachomatis",
+  "treponema", "ID_019", NA, NA, NA, "Treponema",
+  "treponema_pallidum", "ID_019.1", NA, NA, NA, "Treponema pallidum (syphilis)",
+  "borrelia", "ID_020", NA, NA, NA, "Borrelia",
+  "lyme_disease", "ID_020.1", NA, NA, NA, "Lyme disease",
+  "herpesvirus", "ID_052", NA, NA, NA, "Herpesvirus",
+  "herpes_simplex", "ID_052.1", NA, NA, NA, "Herpes simplex",
+  "varicella_zoster_virus", "ID_052.3", NA, NA, NA, "Varicella zoster virus",
+  "infectious_mononucleosis", "ID_052.4", NA, NA, NA, "Infectious mononucleosis",
+  "cytomegalovirus", "ID_052.5", NA, NA, NA, "Cytomegalovirus (CMV)",
+  "varicella_chickenpox", "ID_052.31", NA, NA, NA, "Varicella (chickenpox)",
+  "herpes_zoster", "ID_052.32", NA, NA, NA, "Herpes zoster",
+  "hepatovirus", "ID_054", NA, NA, NA, "Hepatovirus",
+  "hepatitis_a", "ID_054.1", NA, NA, NA, "Hepatitis A",
+  "hepatitis_b", "ID_054.2", NA, NA, NA, "Hepatitis B",
+  "hepatitis_c", "ID_054.3", NA, NA, NA, "Hepatitis C",
+  "hepatitis_b_with_delta", "ID_054.21", NA, NA, NA, "Hepatitis B with delta",
+  "chronic_hepatitis_c", "ID_054.31", NA, NA, NA, "Chronic Hepatitis C",
+  "acute_hepatitis_c", "ID_054.32", NA, NA, NA, "Acute Hepatitis C",
+  "poxvirus", "ID_055", NA, NA, NA, "Poxvirus",
+  "molluscum_contagiosum", "ID_055.1", NA, NA, NA, "Molluscum contagiosum",
+  "hpv", "ID_056", NA, NA, NA, "Human papillomavirus",
+  "plantar_wart", "ID_056.1", NA, NA, NA, "Plantar wart",
+  "anogenital_warts", "ID_056.2", NA, NA, NA, "Anogenital warts",
+  "retrovirus", "ID_057", NA, NA, NA, "Retrovirus",
+  "hiv", "ID_057.1", NA, NA, NA, "Human immunodeficiency virus",
+  "pneumoviridae", "ID_058", NA, NA, NA, "Pneumoviridae",
+  "corona", "ID_059", NA, NA, NA, "Coronavirus",
+  "cov2", "ID_059.1", NA, NA, NA, "Sars-CoV-2",
+  "influenza", "ID_061", NA, NA, NA, "Influenza virus",
+  "other_viral", "ID_069", NA, NA, NA, "Other specified viral infections",
+  "candidiasis", "ID_070", NA, NA, NA, "Candidiasis",
+  "aspergillosis", "ID_074", NA, NA, NA, "Aspergillosis",
+  "pneumocystosis", "ID_076", NA, NA, NA, "Pneumocystosis",
+  "parasites", "ID_084", NA, NA, NA, "Parasites",
+  "trichomoniasis", "ID_084.4", NA, NA, NA, "Trichomoniasis",
+  "toxoplasmosis", "ID_084.5", NA, NA, NA, "Toxoplasmosis",
+  "giardiasis", "ID_084.7", NA, NA, NA, "Giardiasis",
+  "pediculosis", "ID_086.1", NA, NA, NA, "Pediculosis",
+  "scabies", "ID_086.2", NA, NA, NA, "Scabies",
+  "std", "ID_088", NA, NA, NA, "Sexually transmitted disease",
+  "infections", "ID_089", NA, NA, NA, "Infections",
+  "bacterial_infections", "ID_089.1", NA, NA, NA, "Bacterial infections",
+  "viral_infections", "ID_089.2", NA, NA, NA, "Viral infections",
+  "fungal_infections", "ID_089.3", NA, NA, NA, "Fungal infections",
+  "gangrene", "ID_091", NA, NA, NA, "Gangrene",
+  "bacteremia_sepsis_sirs", "ID_092", NA, NA, NA, "Bacteremia, Sepsis, and SIRS",
+  "systemic_inflammatory_response", "ID_092.1", NA, NA, NA, "Systemic inflammatory response syndrome",
+  "sepsis", "ID_092.2", NA, NA, NA, "Sepsis",
+  "bacteremia", "ID_092.8", NA, NA, NA, "Bacteremia",
+  "drug_resistance", "ID_097", NA, NA, NA, "Drug resistant microorganisms",
+  "mrsa", "ID_097.1", NA, NA, NA, "Methicillin-resistant Staphylococcus aureus",
+  "beta_lactam_resistance", "ID_097.3", NA, NA, NA, "Resistance to beta-lactam antibiotics"
+)
+# Create a named list for the dropdown menu choices from the metadata
+dataset_catalog <- setNames(study_metadata$StudyID, study_metadata$TraitName)
+
+# --- 3. USER INTERFACE (UI) ---
+
 ui <- page_sidebar(
   theme = bs_theme(version = 5, bootswatch = "flatly"),
-  title = "GWAS Viewer",
+  
+  title = tags$div(
+    style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
+    "GWAS Viewer",
+    tags$a(
+      href = "https://icahn.mssm.edu/research/institute-genomic-health",
+      tags$img(
+        # Paste the "Raw" GitHub URL here
+        src = "https://github.com/RecHaf04/RechumaGWAS/blob/main/logo.png?raw=true",
+        height = "60px"
+      )
+    )
+  ),
+  
   sidebar = sidebar(
     selectInput("study_selector", h4("Select a Study"),
-                choices = setNames(sapply(dataset_catalog, `[[`, "id"), sapply(dataset_catalog, `[[`, "trait"))),
+                choices = dataset_catalog),
     hr(),
-    h4("Cross-Phenotype Search"),
+    h4("Search by MarkerName"),
+    textInput("marker_search", "MarkerName:", placeholder = "e.g., chr1:12345:A:G"),
+    actionButton("search_marker_button", "Search", class = "btn-success w-100"),
+    hr(),
+    h4("Search by Position"),
     textInput("chr_search", "Chromosome:", placeholder = "e.g., 1 or X"),
     numericInput("pos_search", "Position (HG38):", value = NULL, min = 0),
-    actionButton("search_snp_button", "Search Location", class = "btn-success w-100"),
+    actionButton("search_snp_button", "Search", class = "btn-success w-100")
   ),
+  
+  
   navset_card_tab(
+    
     id = "main_tabs",
-    nav_panel("Manhattan Plot", 
-              withSpinner(imageOutput("manhattan_plot", height = "550px", click = "manhattan_click")),
-              withSpinner(DT::dataTableOutput("peak_info_table"))
+    nav_panel("Plots and Details", 
+              div(
+                style = "position: relative; height: 450px; width: 100%;",
+                
+                # Layer 1: The base PNG image, now also in a positioned div
+                div(
+                  style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
+                  imageOutput("manhattan_plot_base", height = "100%", width = "100%")
+                ),
+                
+                # Layer 2: The invisible interactive layer
+                div(
+                  style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
+                  plotlyOutput("manhattan_plot_interactive_layer", height = "100%", width = "100%")
+                )
+              ),
+           hr(),
+              fluidRow(
+                style = "margin-top: 25px;",
+                column(6, 
+                       h4("Study Details"),
+                       tableOutput("study_details_table"),
+                        ),
+                column(6, 
+                       h4("QQ Plot"),
+                       withSpinner(imageOutput("qq_plot", height = "450px"))
+                )
+              )
     ),
-    nav_panel("QQ Plot", 
-              withSpinner(imageOutput("qq_plot", height = "280px"))
-    ),
-              
-       nav_panel("Summary Data", card(
+   
+     nav_panel("Top Significant Hits", card(
       card_header("Top Significant Hits"),
       withSpinner(DT::dataTableOutput("summary_table"))
     )),
-    nav_panel("Cross-Phenotype Search", card(
+   
+     nav_panel("Cross-Phenotype Search", card(
       card_header("Results for Searched SNP"), withSpinner(DT::dataTableOutput("cross_pheno_table")),
       downloadButton("download_cross_pheno", "Download Results", class = "btn-success mt-3")
-    )),
-    nav_panel("Citations & Data",
-              h4("Data Attribution"),
-              p("If you use data or images from this tool, please cite..."))
+    ))
   )
 )
+
 # --- 4. SERVER ---
 server <- function(input, output, session) {
+  ## 4.1: Initial Setup & Connections
+  
+  # Connect to the local database of significant hits for fast plotting
+  interactive_con <- dbConnect(RSQLite::SQLite(), "interactive_hits.sqlite")
+  onStop(function() { dbDisconnect(interactive_con) })
+  
+  # Load the pre-calculated chromosome map for positioning
+  map_data <- readRDS("chr_map_data.rds")
+  chr_map <- map_data$chr_map
+  total_genome_length <- map_data$total_genome_length
   
   # IMPORTANT: Fill these in with your deployed API URLs
-  # Make sure the URLs include the trailing slash "/"
   API_URL_GROUP_1 <- "https://rstudio-connect.hpc.mssm.edu/content/ced643da-26dd-4b88-9f39-aec6c8c4c000/"
   API_URL_GROUP_2 <- "https://rstudio-connect.hpc.mssm.edu/content/4f6a0804-9030-4ed0-9fd2-186379b35a10/"
   API_URL_GROUP_3 <- "https://rstudio-connect.hpc.mssm.edu/content/30618e94-0ce0-466b-9ce0-ff2568f40399/"
   
   ALL_API_URLS <- c(API_URL_GROUP_1, API_URL_GROUP_2, API_URL_GROUP_3)
   
-  # --- API Calling Helper Function ---
-  # This intelligent function tries each API until it finds the right one
+  # --- 4.2 API Calling Helper Function ---
   call_api <- function(endpoint, body_params) {
     for (base_url in ALL_API_URLS) {
       api_url <- paste0(base_url, endpoint)
       response <- tryCatch({
         POST(url = api_url, body = body_params, encode = "json", timeout(30))
-      }, error = function(e) {
-        # If one API fails to connect, just try the next one
-        return(NULL)
-      })
+      }, error = function(e) { return(NULL) })
       
       if (!is.null(response) && http_status(response)$category == "Success") {
         content <- fromJSON(content(response, "text", encoding = "UTF-8"))
-        
-        # Check if this API told us the data is elsewhere
         if (is.data.frame(content) && "Message" %in% names(content) &&
-            (content$Message[1] == "CHROMOSOME_NOT_IN_THIS_API" || content$Message[1] == "SUMMARY_DATA_NOT_IN_THIS_API")) {
-          next # Try the next API URL
+            (grepl("NOT_IN_THIS_API", content$Message[1]))) {
+          next 
         }
-        return(content) # We found the data
+        return(content) 
       }
     }
-    return(data.frame(Status = "Could not retrieve data from any API.")) # Failed after trying all
+    return(data.frame(Status = "Could not retrieve data from any API.")) 
   }
   
-  # --- Manhattan Plot Click Logic ---
   
- clicked_snp_data <- eventReactive(input$manhattan_click, {
-   req(input$manhattan_click, input$study_selector)
-   
-   click_info <- input$manhattan_click
-   
-   # --- FIX: Scale the plot coordinate to the genomic coordinate ---
-   # 1. Get the total span of the genomic x-axis from our map file
-   last_chr_info <- chr_map[nrow(chr_map), ]
-   total_genome_span_bp <- last_chr_info$total + last_chr_info$chr_len
-   
-   # 2. Scale the click coordinate to the cumulative genomic position
-   clicked_bp_cum <- (click_info$x / click_info$domain$right) * total_genome_span_bp
-   
-   # 3. Find the correct chromosome and real position from the cumulative position
-   clicked_chr_info <- chr_map %>% 
-     filter(total <= clicked_bp_cum) %>% 
-     filter(total == max(total))
-   
-   if (nrow(clicked_chr_info) == 0) { return(data.frame()) }
-   
-   clicked_chr <- clicked_chr_info$Chromosome
-   real_pos <- round(clicked_bp_cum - clicked_chr_info$total)
-   search_radius <- 50000 # Search +/- 50kb
-   
-   results <- call_api(
-     endpoint = "region",
-     body_params = list(
-       chromosome = clicked_chr,
-       start_pos = real_pos - search_radius,
-       end_pos = real_pos + search_radius,
-       study_id = input$study_selector
-     )
-   )
-   
-   if (!is.data.frame(results)) { return(data.frame()) }
-   
-   if (nrow(results) > 0 && !"Status" %in% names(results)) {
-     results <- results %>%
-       arrange(P_value) %>%
-       select(StudyID, P_value, LOG10P, everything(), -Chromosome, -Position, -Direction)
-   }
-   return(results)
- })
+  ## 4.3: Main Plot Rendering (Hybrid Plot)
   
-  output$peak_info_table <- DT::renderDataTable({ datatable(clicked_snp_data(), options = list(pageLength = 5, scrollX = TRUE)) })
-  
-  # --- Summary Data Logic ---
-  summary_data <- reactive({
+  # Layer 1: Renders the static, pre-generated PNG image
+  output$manhattan_plot_base <- renderImage({
     req(input$study_selector)
-   results <- call_api(
-      endpoint = "summary",
-      body_params = list(study_id = input$study_selector)
+    list(
+      src = file.path("www", paste0(input$study_selector, ".png")),
+      contentType = 'image/png',
+      width = "100%",
+      height = 450  # Set height in pixels to match the container
     )
-    if (is.data.frame(results) && nrow(results) > 0 && !"Status" %in% names(results)) {
-      results <- results %>%
-        select(Chromosome, Position, P_value, LOG10P, everything(), MarkerName)
-    }
-    return(results)
+  }, deleteFile = FALSE)
+  # Layer 2: Renders the invisible layer of significant points for hover/click
+  output$manhattan_plot_interactive_layer <- renderPlotly({
+    req(input$study_selector)
+    
+    # Fetch significant points from the FAST local SQLite database
+    query <- sprintf("SELECT * FROM `%s`", input$study_selector)
+    interactive_points <- dbGetQuery(interactive_con, query)
+    
+    if (!is.data.frame(interactive_points) || nrow(interactive_points) == 0) return(NULL)
+    
+    # Create cumulative coordinates for plotting
+    interactive_points <- interactive_points %>%
+      mutate(Chromosome = as.character(Chromosome)) %>%
+      inner_join(select(chr_map, Chromosome, cumulative_start), by = "Chromosome") %>%
+      mutate(BP_cumulative = Position + cumulative_start)
+    # Create the plot directly with plot_ly for perfect control and alignment
+    p <- plot_ly(
+      data = interactive_points,
+      x = ~BP_cumulative, y = ~LOG10P,
+      type = 'scatter', mode = 'markers',
+      marker = list(color = 'transparent'),
+      text = ~MarkerName, customdata = ~MarkerName,
+      hoverinfo = 'text', source = "interactive_layer_source"
+    ) %>%
+      layout(
+        xaxis = list(range = c(0, total_genome_length), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
+        yaxis = list(range = c(0, max(interactive_points$LOG10P, na.rm = TRUE) * 1.18), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
+        margin = list(l = 100, r = 0, b = 0, t = 0, pad = 0), # Calibrated left margin
+        paper_bgcolor = 'transparent', plot_bgcolor = 'transparent'
+      ) %>%
+      config(displayModeBar = FALSE) %>%
+      event_register('plotly_click')
+    
+    return(p)
   })
   
-  output$summary_table <- DT::renderDataTable({ datatable(summary_data(), options = list(scrollX = TRUE)) })
+  ## 4.4: Interactive Logic
+  output$study_details_table <- renderTable({
+    study_metadata %>%
+      filter(StudyID == input$study_selector) %>%
+      select(PheCode, Ancestry, Cases, Controls) 
+  }, bordered = TRUE, hover = TRUE)
+  # Instantly populates the search box when a point on the plot is clicked
+  observeEvent(event_data("plotly_click", source = "interactive_layer_source"), {
+    clicked_marker <- event_data("plotly_click", source = "interactive_layer_source")$customdata
+    updateTextInput(session, "marker_search", value = clicked_marker)
+  }, ignoreNULL = TRUE)
+  cross_pheno_results <- reactiveVal(data.frame())
   
-  # --- Cross-Phenotype Search Button Logic ---
-  cross_pheno_results <- eventReactive(input$search_snp_button, {
-    req(input$pos_search)
+  # Marker Name search button logic
+  observeEvent(input$search_marker_button, {
+    req(input$marker_search)
     results <- call_api(
-      endpoint = "phewas",
-      body_params = list(
-        chromosome = input$chr_search,
-        position = input$pos_search
-      )
+      endpoint = "marker",
+      body_params = list(marker_name = input$marker_search)
     )
-    
+    if (is.data.frame(results) && !"LOG10P" %in% names(results) && "P_value" %in% names(results)) {
+      results <- results %>% mutate(LOG10P = -log10(P_value))
+    }
     if (is.data.frame(results) && nrow(results) > 0 && !"Status" %in% names(results)) {
       results <- results %>%
         arrange(desc(LOG10P)) %>%
-        select(StudyID, P_value, LOG10P, everything(), -Chromosome, -Position, -Direction)
+        select(StudyID, P_value, LOG10P, everything(), -Chromosome, -Position, -Direction, -FreqSE, -MinFreq, -MaxFreq, -HetISq, -HetChiSq, -HetDf)
+    }
+    cross_pheno_results(results)
+  })
+  output$cross_pheno_table <- DT::renderDataTable({
+    datatable(cross_pheno_results(), options = list(pageLength = 10, scrollX = TRUE))
+  })
+  
+  # Position search button logic
+  observeEvent(input$search_snp_button, {
+    req(input$pos_search)
+    results <- call_api(
+      endpoint = "phewas",
+      body_params = list(chromosome = input$chr_search, position = input$pos_search)
+    )
+    if (is.data.frame(results) && !"LOG10P" %in% names(results) && "P_value" %in% names(results)) {
+      results <- results %>% mutate(LOG10P = -log10(P_value))
+    }
+    if (is.data.frame(results) && nrow(results) > 0 && !"Status" %in% names(results)) {
+      results <- results %>%
+        arrange(desc(LOG10P)) %>%
+        select(StudyID, P_value, LOG10P, everything(), -Chromosome, -Position, -Direction, -FreqSE, -MinFreq, -MaxFreq, -HetISq, -HetChiSq, -HetDf)
+    }
+    cross_pheno_results(results)
+  })
+  
+  
+  summary_data <- reactive({
+    req(input$study_selector)
+    results <- call_api(endpoint = "summary", body_params = list(study_id = input$study_selector))
+    if (is.data.frame(results) && nrow(results) > 0 && !"Status" %in% names(results)) {
+      results <- results %>%
+        select(Chromosome, Position, P_value, LOG10P, everything(), MarkerName, StudyID, 
+               -Direction, -FreqSE, -MinFreq, -MaxFreq, -HetISq, -HetChiSq, -HetDf)
     }
     return(results)
   })
+  output$summary_table <- DT::renderDataTable({ datatable(summary_data(), options = list(scrollX = TRUE)) })
   
-  output$cross_pheno_table <- DT::renderDataTable({ datatable(cross_pheno_results(), options = list(pageLength = 10, scrollX = TRUE)) })
   
   # --- Other Outputs (Plots, Downloads) ---
-  output$manhattan_plot <- renderImage({
-    req(input$study_selector)
-    list(src = file.path("www", paste0(input$study_selector, ".png")), contentType = 'image/png', width = "100%") 
-  }, deleteFile = FALSE)
-  
+ 
   output$qq_plot <- renderImage({
     req(input$study_selector)
-    list(src = file.path("www", paste0("qq_", input$study_selector, ".png")), contentType = 'image/png', height = "350px")
+    list(src = file.path("www", paste0("qq_", input$study_selector, ".png")), contentType = 'image/png', width = "100%")
   }, deleteFile = FALSE)
   
   output$download_cross_pheno <- downloadHandler(
-    filename = function() { paste0("cross-pheno-results-chr", input$chr_search, "-", input$pos_search, ".csv") },
-    content = function(file) { write.csv(cross_pheno_results(), file, row.names = FALSE) }
+    filename = function() {
+      if (!is.null(input$pos_search) && input$pos_search > 0) {
+        paste0("cross-pheno-results-chr", input$chr_search, "-", input$pos_search, ".csv")
+      } else if (!is.null(input$marker_search) && input$marker_search != "") {
+        paste0("cross-pheno-results-marker-", input$marker_search, ".csv")
+      } else {
+        "cross-pheno-results.csv"
+      }
+    },
+    content = function(file) {
+      write.csv(cross_pheno_results(), file, row.names = FALSE)
+    }
   )
 }
 
