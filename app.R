@@ -104,7 +104,7 @@ ui <- page_sidebar(
       href = "https://icahn.mssm.edu/research/institute-genomic-health",
       tags$img(
         # Paste the "Raw" GitHub URL here
-        src = "https://github.com/RecHaf04/RechumaGWAS/blob/main/logo.png?raw=true",
+        src = "https://github.com/RecHaf04/RechumaGWAS/blob/main/MS_Icahn_K_Hrztl_no_reg.png?raw=true",
         height = "60px"
       )
     )
@@ -129,21 +129,18 @@ ui <- page_sidebar(
     
     id = "main_tabs",
     nav_panel("Plots and Details", 
+      
               div(
                 style = "position: relative; height: 450px; width: 100%;",
-                
-                # Layer 1: The base PNG image, now also in a positioned div
                 div(
                   style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
                   imageOutput("manhattan_plot_base", height = "100%", width = "100%")
                 ),
-                
-                # Layer 2: The invisible interactive layer
                 div(
-                  style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
+                  style = "position: absolute; top: 18px; left: 30px; width: 100%; height: 100%;",
                   plotlyOutput("manhattan_plot_interactive_layer", height = "100%", width = "100%")
                 )
-              ),
+              ),     
            hr(),
               fluidRow(
                 style = "margin-top: 25px;",
@@ -152,7 +149,7 @@ ui <- page_sidebar(
                        tableOutput("study_details_table"),
                         ),
                 column(6, 
-                       h4("QQ Plot"),
+                       h4(),
                        withSpinner(imageOutput("qq_plot", height = "450px"))
                 )
               )
@@ -238,8 +235,7 @@ server <- function(input, output, session) {
       mutate(Chromosome = as.character(Chromosome)) %>%
       inner_join(select(chr_map, Chromosome, cumulative_start), by = "Chromosome") %>%
       mutate(BP_cumulative = Position + cumulative_start)
-    # Create the plot directly with plot_ly for perfect control and alignment
-    p <- plot_ly(
+    plot_ly(
       data = interactive_points,
       x = ~BP_cumulative, y = ~LOG10P,
       type = 'scatter', mode = 'markers',
@@ -248,16 +244,16 @@ server <- function(input, output, session) {
       hoverinfo = 'text', source = "interactive_layer_source"
     ) %>%
       layout(
-        xaxis = list(range = c(0, total_genome_length), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
-        yaxis = list(range = c(0, max(interactive_points$LOG10P, na.rm = TRUE) * 1.18), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
-        margin = list(l = 100, r = 0, b = 0, t = 0, pad = 0), # Calibrated left margin
-        paper_bgcolor = 'transparent', plot_bgcolor = 'transparent'
+        xaxis = list(range = c(-95000000, total_genome_length + 100000000), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
+        yaxis = list(range = c(-1.6, max(interactive_points$LOG10P, na.rm = TRUE) * 1.15), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
+        margin = list(l = 0, r = 0, b = 0, t = 0, pad = 0),
+        paper_bgcolor = 'transparent', 
+        plot_bgcolor = 'transparent'
       ) %>%
       config(displayModeBar = FALSE) %>%
       event_register('plotly_click')
-    
-    return(p)
   })
+ 
   
   ## 4.4: Interactive Logic
   output$study_details_table <- renderTable({
