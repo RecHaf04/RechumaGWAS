@@ -1,4 +1,3 @@
-#app.R - Final Full Version for Multi-API Architecture
 
 # --- 1. LOAD PACKAGES ---
 library(shiny)
@@ -23,49 +22,49 @@ study_metadata <- tibble::tribble(
   ~StudyID, ~PheCode, ~Ancestry, ~Cases, ~Controls, ~TraitName,
   "staph_aureus", "ID_002.1", "European", 1204, 50000, "Staphylococcus aureus",
   "staphylococcus", "ID_002", "European", 850, 45000, "Staphylococcus",
-  "escherichia_coli", "ID_003", "Mixed", 2500, 98000, "Escherichia coli",
+  "escherichia_coli", "ID_003", "Mixed", 2500, 98000, "Escherichia Coli",
   "streptococcus", "ID_004", NA, NA, NA, "Streptococcus",
   "group_a_streptococcus", "ID_004.2", NA, NA, NA, "Group A Streptococcus",
   "group_b_streptococcus", "ID_004.3", NA, NA, NA, "Group B Streptococcus",
   "mycobacteria", "ID_005", NA, NA, NA, "Mycobacteria",
-  "mycobacterium_tuberculosis", "ID_005.1", NA, NA, NA, "Mycobacterium tuberculosis",
+  "mycobacterium_tuberculosis", "ID_005.1", NA, NA, NA, "Mycobacterium Tuberculosis",
   "neisseria", "ID_006", NA, NA, NA, "Neisseria",
-  "neisseria_gonorrhea", "ID_006.2", NA, NA, NA, "Neisseria gonorrhea",
+  "neisseria_gonorrhea", "ID_006.2", NA, NA, NA, "Neisseria Gonorrhea",
   "H_pylori", "ID_008", NA, NA, NA, "Helicobacter pylori",
   "clostridium", "ID_015", NA, NA, NA, "Clostridium",
-  "clostridium_difficile", "ID_015.2", NA, NA, NA, "Clostridium difficile",
+  "clostridium_difficile", "ID_015.2", NA, NA, NA, "Clostridium Difficile",
   "chlamydia", "ID_016", NA, NA, NA, "Chlamydia",
-  "chlamydia_trachomatis", "ID_016.1", NA, NA, NA, "Chlamydia trachomatis",
+  "chlamydia_trachomatis", "ID_016.1", NA, NA, NA, "Chlamydia Trachomatis",
   "treponema", "ID_019", NA, NA, NA, "Treponema",
-  "treponema_pallidum", "ID_019.1", NA, NA, NA, "Treponema pallidum (syphilis)",
+  "treponema_pallidum", "ID_019.1", NA, NA, NA, "Treponema Pallidum (Syphilis)",
   "borrelia", "ID_020", NA, NA, NA, "Borrelia",
-  "lyme_disease", "ID_020.1", NA, NA, NA, "Lyme disease",
+  "lyme_disease", "ID_020.1", NA, NA, NA, "Lyme Disease",
   "herpesvirus", "ID_052", NA, NA, NA, "Herpesvirus",
-  "herpes_simplex", "ID_052.1", NA, NA, NA, "Herpes simplex",
-  "varicella_zoster_virus", "ID_052.3", NA, NA, NA, "Varicella zoster virus",
-  "infectious_mononucleosis", "ID_052.4", NA, NA, NA, "Infectious mononucleosis",
+  "herpes_simplex", "ID_052.1", NA, NA, NA, "Herpes Simplex",
+  "varicella_zoster", "ID_052.3", NA, NA, NA, "Varicella Zoster Virus",
+  "infectious_mono", "ID_052.4", NA, NA, NA, "Infectious Mononucleosis",
   "cytomegalovirus", "ID_052.5", NA, NA, NA, "Cytomegalovirus (CMV)",
-  "varicella_chickenpox", "ID_052.31", NA, NA, NA, "Varicella (chickenpox)",
-  "herpes_zoster", "ID_052.32", NA, NA, NA, "Herpes zoster",
+  "varicella_chickenpox", "ID_052.31", NA, NA, NA, "Varicella (Chickenpox)",
+  "herpes_zoster", "ID_052.32", NA, NA, NA, "Herpes Zoster",
   "hepatovirus", "ID_054", NA, NA, NA, "Hepatovirus",
   "hepatitis_a", "ID_054.1", NA, NA, NA, "Hepatitis A",
   "hepatitis_b", "ID_054.2", NA, NA, NA, "Hepatitis B",
   "hepatitis_c", "ID_054.3", NA, NA, NA, "Hepatitis C",
-  "hepatitis_b_with_delta", "ID_054.21", NA, NA, NA, "Hepatitis B with delta",
+  "hepatitis_b_with_delta", "ID_054.21", NA, NA, NA, "Hepatitis B with Delta",
   "chronic_hepatitis_c", "ID_054.31", NA, NA, NA, "Chronic Hepatitis C",
   "acute_hepatitis_c", "ID_054.32", NA, NA, NA, "Acute Hepatitis C",
   "poxvirus", "ID_055", NA, NA, NA, "Poxvirus",
-  "molluscum_contagiosum", "ID_055.1", NA, NA, NA, "Molluscum contagiosum",
-  "hpv", "ID_056", NA, NA, NA, "Human papillomavirus",
-  "plantar_wart", "ID_056.1", NA, NA, NA, "Plantar wart",
-  "anogenital_warts", "ID_056.2", NA, NA, NA, "Anogenital warts",
+  "molluscum_cont", "ID_055.1", NA, NA, NA, "Molluscum Contagiosum",
+  "hpv", "ID_056", NA, NA, NA, "Human Papilloma Virus",
+  "plantar_wart", "ID_056.1", NA, NA, NA, "Plantar Warts",
+  "anogenital_warts", "ID_056.2", NA, NA, NA, "Anogenital Warts",
   "retrovirus", "ID_057", NA, NA, NA, "Retrovirus",
-  "hiv", "ID_057.1", NA, NA, NA, "Human immunodeficiency virus",
-  "pneumoviridae", "ID_058", NA, NA, NA, "Pneumoviridae",
+  "hiv", "ID_057.1", NA, NA, NA, "Human Immunodeficiency Virus",
+  "pneumo", "ID_058", NA, NA, NA, "Pneumoviridae",
   "corona", "ID_059", NA, NA, NA, "Coronavirus",
   "cov2", "ID_059.1", NA, NA, NA, "Sars-CoV-2",
-  "influenza", "ID_061", NA, NA, NA, "Influenza virus",
-  "other_viral", "ID_069", NA, NA, NA, "Other specified viral infections",
+  "influenza", "ID_061", NA, NA, NA, "Influenza Virus",
+  "other_viral", "ID_069", NA, NA, NA, "Other Specified Viral Infections",
   "candidiasis", "ID_070", NA, NA, NA, "Candidiasis",
   "aspergillosis", "ID_074", NA, NA, NA, "Aspergillosis",
   "pneumocystosis", "ID_076", NA, NA, NA, "Pneumocystosis",
@@ -73,20 +72,20 @@ study_metadata <- tibble::tribble(
   "trichomoniasis", "ID_084.4", NA, NA, NA, "Trichomoniasis",
   "toxoplasmosis", "ID_084.5", NA, NA, NA, "Toxoplasmosis",
   "giardiasis", "ID_084.7", NA, NA, NA, "Giardiasis",
-  "pediculosis", "ID_086.1", NA, NA, NA, "Pediculosis",
+  "pediculosis_acarisis_other", "ID_086.1", NA, NA, NA, "Pediculosis, Acarisis and Other Infections",
   "scabies", "ID_086.2", NA, NA, NA, "Scabies",
-  "std", "ID_088", NA, NA, NA, "Sexually transmitted disease",
+  "std", "ID_088", NA, NA, NA, "Sexually Transmitted Disease",
   "infections", "ID_089", NA, NA, NA, "Infections",
-  "bacterial_infections", "ID_089.1", NA, NA, NA, "Bacterial infections",
-  "viral_infections", "ID_089.2", NA, NA, NA, "Viral infections",
-  "fungal_infections", "ID_089.3", NA, NA, NA, "Fungal infections",
+  "bacterial_infections", "ID_089.1", NA, NA, NA, "Bacterial Infections",
+  "viral_infections", "ID_089.2", NA, NA, NA, "Viral Infections",
+  "fungal_infections", "ID_089.3", NA, NA, NA, "Fungal Infections",
   "gangrene", "ID_091", NA, NA, NA, "Gangrene",
   "bacteremia_sepsis_sirs", "ID_092", NA, NA, NA, "Bacteremia, Sepsis, and SIRS",
-  "systemic_inflammatory_response", "ID_092.1", NA, NA, NA, "Systemic inflammatory response syndrome",
+  "systemic_inflammatory_response", "ID_092.1", NA, NA, NA, "Systemic Inflammatory Response Syndrome",
   "sepsis", "ID_092.2", NA, NA, NA, "Sepsis",
   "bacteremia", "ID_092.8", NA, NA, NA, "Bacteremia",
-  "drug_resistance", "ID_097", NA, NA, NA, "Drug resistant microorganisms",
-  "mrsa", "ID_097.1", NA, NA, NA, "Methicillin-resistant Staphylococcus aureus",
+  "drug_resistance", "ID_097", NA, NA, NA, "Drug Resistant Microorganisms",
+  "mrsa", "ID_097.1", NA, NA, NA, "Methicillin-resistant Staphylococcus Aureus",
   "beta_lactam_resistance", "ID_097.3", NA, NA, NA, "Resistance to beta-lactam antibiotics"
 )
 # Create a named list for the dropdown menu choices from the metadata
@@ -99,12 +98,12 @@ ui <- page_sidebar(
   
   title = tags$div(
     style = "display: flex; justify-content: space-between; align-items: center; width: 100%;",
-    "GWAS Viewer",
+    "GWAS Data for Infectious Disease Phenotypes",
     tags$a(
       href = "https://icahn.mssm.edu/research/institute-genomic-health",
       tags$img(
         # Paste the "Raw" GitHub URL here
-        src = "https://github.com/RecHaf04/RechumaGWAS/blob/main/MS_Icahn_K_Hrztl_no_reg.png?raw=true",
+        src = "https://github.com/RecHaf04/RechumaGWAS/blob/main/MS_Icahn_RGB_Hrztl_no_reg.png?raw=true",
         height = "60px"
       )
     )
@@ -113,44 +112,81 @@ ui <- page_sidebar(
   sidebar = sidebar(
     selectInput("study_selector", h4("Select a Study"),
                 choices = dataset_catalog),
+  #  checkboxInput("calibration_mode", "Enter Alignment Calibration Mode", FALSE),
+  #  conditionalPanel(
+   #   "input.calibration_mode == true",
+   #   sliderInput("left_padding", "Adjust Left Side (X-Axis)", min = -200000000, max = 200000000, value = -40000000),
+   #   sliderInput("right_padding", "Adjust Right Side (X-Axis)", min = -200000000, max = 200000000, value = -125000000),
+    #  sliderInput("bottom_padding", "Adjust Bottom (Y-Axis)", min = -5, max = 5, value = 1.1, step = 0.1),
+    #  sliderInput("top_padding_factor", "Adjust Top (Y-Axis)", min = 1.0, max = 1.5, value = 1.06, step = 0.01)
+  #  ),
+   # hr(),
+    # --- END OF CALIBRATION SECTION ---
+
     hr(),
     h4("Search by MarkerName"),
     textInput("marker_search", "MarkerName:", placeholder = "e.g., chr1:12345:A:G"),
     actionButton("search_marker_button", "Search", class = "btn-success w-100"),
     hr(),
     h4("Search by Position"),
-    textInput("chr_search", "Chromosome:", placeholder = "e.g., 1 or X"),
+    textInput("chr_search", "Chromosome:", placeholder = "e.g., 1 or 22"),
     numericInput("pos_search", "Position (HG38):", value = NULL, min = 0),
-    actionButton("search_snp_button", "Search", class = "btn-success w-100")
-  ),
+    actionButton("search_snp_button", "Search", class = "btn-success w-100"),
+    hr(),
+    p("If using any images, tables, or data from this site, please cite yadayada")
   
+  ),
   
   navset_card_tab(
     
+    
+    
     id = "main_tabs",
-    nav_panel("Plots and Details", 
-      
+    
+    nav_panel("Plots and Details",
+              
+              
+              
               div(
-                style = "position: relative; height: 450px; width: 100%;",
+                
+                style = "position: relative; height: 350px; width: 100%;",
+                
                 div(
+                  
                   style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
                   imageOutput("manhattan_plot_base", height = "100%", width = "100%")
+                  
                 ),
+                
                 div(
-                  style = "position: absolute; top: 18px; left: 30px; width: 100%; height: 100%;",
+                  
+                  style = "position: absolute; top: 25px; left: 10px; width: 100%; height: 100%;",
+                  
                   plotlyOutput("manhattan_plot_interactive_layer", height = "100%", width = "100%")
+                  
                 )
-              ),     
-           hr(),
+                
+              ),
+              hr(),
+              
               fluidRow(
+                
                 style = "margin-top: 25px;",
-                column(6, 
+                
+                column(6,
+                       
                        h4("Study Details"),
+                       
                        tableOutput("study_details_table"),
-                        ),
-                column(6, 
+                       
+                ),
+                
+                column(6,
+                       
                        h4(),
+                       
                        withSpinner(imageOutput("qq_plot", height = "450px"))
+                       
                 )
               )
     ),
@@ -170,8 +206,17 @@ ui <- page_sidebar(
 # --- 4. SERVER ---
 server <- function(input, output, session) {
   ## 4.1: Initial Setup & Connections
+  calibration_df <- readr::read_csv("calibration_settings.csv", col_types = cols(
+    StudyID = col_character(),
+    left_padding = col_double(),
+    right_padding = col_double(),
+    bottom_padding = col_double(),
+    top_padding_factor = col_double()
+  )
+  )
+ 
   
-  # Connect to the local database of significant hits for fast plotting
+   # Connect to the local database of significant hits for fast plotting
   interactive_con <- dbConnect(RSQLite::SQLite(), "interactive_hits.sqlite")
   onStop(function() { dbDisconnect(interactive_con) })
   
@@ -213,47 +258,67 @@ server <- function(input, output, session) {
   # Layer 1: Renders the static, pre-generated PNG image
   output$manhattan_plot_base <- renderImage({
     req(input$study_selector)
-    list(
-      src = file.path("www", paste0(input$study_selector, ".png")),
+    list(src = file.path("www", paste0(input$study_selector, ".png")),
       contentType = 'image/png',
-      width = "100%",
-      height = 450  # Set height in pixels to match the container
-    )
-  }, deleteFile = FALSE)
+    width = "100%",
+    height = 450
+  )
+      }, deleteFile = FALSE)
   # Layer 2: Renders the invisible layer of significant points for hover/click
   output$manhattan_plot_interactive_layer <- renderPlotly({
     req(input$study_selector)
     
-    # Fetch significant points from the FAST local SQLite database
-    query <- sprintf("SELECT * FROM `%s`", input$study_selector)
-    interactive_points <- dbGetQuery(interactive_con, query)
-    
-    if (!is.data.frame(interactive_points) || nrow(interactive_points) == 0) return(NULL)
-    
-    # Create cumulative coordinates for plotting
-    interactive_points <- interactive_points %>%
-      mutate(Chromosome = as.character(Chromosome)) %>%
-      inner_join(select(chr_map, Chromosome, cumulative_start), by = "Chromosome") %>%
-      mutate(BP_cumulative = Position + cumulative_start)
-    plot_ly(
-      data = interactive_points,
-      x = ~BP_cumulative, y = ~LOG10P,
-      type = 'scatter', mode = 'markers',
-      marker = list(color = 'transparent'),
-      text = ~MarkerName, customdata = ~MarkerName,
-      hoverinfo = 'text', source = "interactive_layer_source"
-    ) %>%
-      layout(
-        xaxis = list(range = c(-95000000, total_genome_length + 100000000), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
-        yaxis = list(range = c(-1.6, max(interactive_points$LOG10P, na.rm = TRUE) * 1.15), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE, title = ""),
-        margin = list(l = 0, r = 0, b = 0, t = 0, pad = 0),
-        paper_bgcolor = 'transparent', 
-        plot_bgcolor = 'transparent'
+      # --- NORMAL INTERACTIVE PLOT ---
+      query <- sprintf("SELECT * FROM `%s`", input$study_selector)
+      interactive_points <- dbGetQuery(interactive_con, query)
+      
+      if (!is.data.frame(interactive_points) || nrow(interactive_points) == 0) return(NULL)
+      
+      interactive_points <- interactive_points %>%
+        mutate(Chromosome = as.character(Chromosome)) %>%
+        inner_join(select(chr_map, Chromosome, cumulative_start), by = "Chromosome") %>%
+        mutate(BP_cumulative = Position + cumulative_start)
+     current_settings <- calibration_df %>% filter(StudyID == input$study_selector)
+     
+     # Default values in case a study is missing from the CSV
+     if (nrow(current_settings) == 0) {
+       current_settings <- list(
+         left_padding = -66666667,
+         right_padding = -136111111,
+         bottom_padding = 1,
+         top_padding_factor = 1.05
+       )
+     }
+      plot_ly(
+        data = interactive_points,
+        x = ~BP_cumulative, y = ~LOG10P,
+        type = 'scatter', mode = 'markers',
+        marker = list(color = 'transparent', size = 3), # Set back to transparent for final version
+        text = ~MarkerName, customdata = ~MarkerName,
+        hoverinfo = 'text', source = "interactive_layer_source"
       ) %>%
-      config(displayModeBar = FALSE) %>%
-      event_register('plotly_click')
-  })
- 
+        layout(
+          xaxis = list(range = c(current_settings$left_padding, total_genome_length + current_settings$right_padding),
+                       showgrid = FALSE,
+                       zeroline = FALSE,
+                       showticklabels = FALSE, 
+                       title = ""
+          ),
+          yaxis = list(range = c(current_settings$bottom_padding, max(interactive_points$LOG10P, na.rm = TRUE) * current_settings$top_padding_factor),
+                       showgrid = FALSE,
+                       zeroline = FALSE,
+                       showticklabels = FALSE,
+                       title = ""
+          ),
+          margin = list(l = 0, r = 0, b = 0, t = 0, pad = 0),
+          paper_bgcolor = 'transparent', 
+          plot_bgcolor = 'transparent',
+          showlegend = FALSE
+        ) %>%
+        config(displayModeBar = FALSE) %>%
+        event_register('plotly_click')
+    
+})
   
   ## 4.4: Interactive Logic
   output$study_details_table <- renderTable({
@@ -346,3 +411,4 @@ server <- function(input, output, session) {
 
 # --- 5. RUN ---
 shinyApp(ui, server)
+
