@@ -80,6 +80,7 @@ The frontend app needs to be told that a new study exists so it can be added to 
       list(id = "my_new_study_2025", trait = "My New Study 2025")
     )
     ```
+*Change the color of the interactive points in plotly from 'transparent' to 'red', change the layout from 'current_settings' to 'input' and remove the hashtags from the calibration logic in the UI. Then run app, go to the newly added dataset, and adjust sliders until plotted points perfectly match the png. then put those numbers in under the dataset name in the calibration_settings.csv file, save, turn off the calibration mode, make the points transparent again, and get ready to deploy.
 
 ### Step 5: Re-deploy the APIs and the App
 
