@@ -44,19 +44,19 @@ Adding a new dataset involves a lot of steps, more than there are in the deepest
 ### Step 1: Add the New Dataset to the Main Database
 
 The first step is to add your new, cleaned summary statistics as a new table inside the main `gwas_data_v2.sqlite` database.
- Run the file titled "create gwas_data_v2.sqlite" Currently it is 185.5 gb. 
+ Run the file titled `create gwas_data_v2.sqlite` Currently it is 185.5 gb. 
 
 ### Step 2: Re-run the Data Preparation Pipeline
 
 Now that the raw data is in the main database, you must re-run the three main processing scripts
 
 Run these scripts from your R console in the following order:
-
-  source("data_prep_scripts/create_chromosome_dbs.R")
+```R
+      source("data_prep_scripts/create_chromosome_dbs.R")
     source("data_prep_scripts/create_all_indexes.R")
     source("data_prep_scripts/create_summary_sqlite.R")
     source(prepare_interactive_db.R)
-
+```
 
 ### Step 3: Pre-render the New Plots
 
@@ -78,7 +78,7 @@ The frontend app needs to be told that a new study exists so it can be added to 
       list(id = "my_new_study_2025", trait = "My New Study 2025")
     )
     ```
-*Change the color of the interactive points in plotly from 'transparent' to 'red', change the layout from 'current_settings' to 'input' and remove the hashtags from the calibration logic in the UI. Then run app, go to the newly added dataset, and adjust sliders until plotted points perfectly match the png. then put those numbers in under the dataset name in the calibration_settings.csv file, save, turn off the calibration mode, make the points transparent again, and get ready to deploy.
+*Change the color of the interactive points in plotly from 'transparent' to 'red', change the layout from 'current_settings' to 'input' and remove the hashtags from the calibration logic in the UI. Then run app, go to the newly added dataset, and adjust sliders until plotted points perfectly match the png. then put those numbers in under the dataset name in the `calibration_settings.csv` file, save, turn off the calibration mode, make the points transparent again, and get ready to deploy.
 
 ### Step 5: Re-deploy the APIs and the App
 
