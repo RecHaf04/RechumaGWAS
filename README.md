@@ -1,6 +1,3 @@
-# RechumaGWAS
-all files and instructions for adding to and editing the gwas_viewer 
-
 
 # GWAS Interactive Visualization App
 
@@ -15,7 +12,7 @@ This application provides a high-performance, interactive web interface for expl
 -   **Cross-Phenotype Search**: Instantly search for associations for a specific SNP across all studies in the database, either by MarkerName or by genomic position.
 -   **Study Summaries**: View key metadata for each study and browse a table of top significant hits.
 -   **QQ Plots**: View pre-rendered QQ plots for each study.
-
+-  **LocusZoom/Forest Plots**: for applicable sets with genome significant points
 ---
 ## Project Structure & Architecture
 
@@ -26,6 +23,7 @@ The architecture consists of a frontend Shiny application and a backend powered 
 -   **Plumber APIs**: A set of Plumber APIs that provide endpoints to query the `chr_?.sqlite` databases. The Shiny app communicates with these APIs.
 -   `www/`: A folder containing pre-rendered static PNGs for the Manhattan and QQ plots of each study.
 -   `interactive_hits.sqlite`: A lightweight, local SQLite database containing only the significant hits (`P < 1e-5`) for all studies. This file is bundled with the Shiny app and is the key to its speed.
+-   `calibration_settings.csv`: individual settings for each dataset to allow for exact accuracy when hovering over manhattan plots
 -   **Helper Scripts**: Scripts are used offline to process data and generate assets for the app.
 
 ---
