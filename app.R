@@ -94,6 +94,7 @@ dataset_catalog <- setNames(study_metadata$StudyID, study_metadata$TraitName)
 # --- 3. USER INTERFACE (UI) ---
 
 ui <- page_sidebar(
+  fillable = FALSE,
   theme = bs_theme(version = 5, bootswatch = "flatly"),
   
   title = tags$div(
@@ -112,15 +113,17 @@ ui <- page_sidebar(
   sidebar = sidebar(
     selectInput("study_selector", h4("Select a Study"),
                 choices = dataset_catalog),
-  #  checkboxInput("calibration_mode", "Enter Alignment Calibration Mode", FALSE),
-  #  conditionalPanel(
-   #   "input.calibration_mode == true",
-   #   sliderInput("left_padding", "Adjust Left Side (X-Axis)", min = -200000000, max = 200000000, value = -40000000),
-   #   sliderInput("right_padding", "Adjust Right Side (X-Axis)", min = -200000000, max = 200000000, value = -125000000),
-    #  sliderInput("bottom_padding", "Adjust Bottom (Y-Axis)", min = -5, max = 5, value = 1.1, step = 0.1),
-    #  sliderInput("top_padding_factor", "Adjust Top (Y-Axis)", min = 1.0, max = 1.5, value = 1.06, step = 0.01)
-  #  ),
-   # hr(),
+#   checkboxInput("calibration_mode", "Enter Alignment Calibration Mode", FALSE),
+#   conditionalPanel(
+#    "input.calibration_mode == true",
+#   sliderInput("left_padding", "Adjust Left Side (X-Axis)", min = -200000000, max = 200000000, value = -66666666),
+# sliderInput("right_padding", "Adjust Right Side (X-Axis)", min = -200000000, max = 200000000, value = -136000000),
+#   sliderInput("bottom_padding", "Adjust Bottom (Y-Axis)", min = -5, max = 5, value = 1, step = 0.1),
+#    sliderInput("top_padding_factor", "Adjust Top (Y-Axis)", min = 1.0, max = 1.5, value = 1.05, step = 0.01)
+# ),
+# hr(),
+#h5("Live Calibration Values:"),
+#verbatimTextOutput("debug_text", placeholder = TRUE),
     # --- END OF CALIBRATION SECTION ---
 
     hr(),
@@ -138,74 +141,56 @@ ui <- page_sidebar(
   ),
   
   navset_card_tab(
-    
-    
-    
     id = "main_tabs",
-    
     nav_panel("Plots and Details",
-              
-              
-              
-              div(
-                
-                style = "position: relative; height: 350px; width: 100%;",
-                
+            
+        div(
+               style = "position: relative; height: 350px; width: 100%;",
                 div(
-                  
-                  style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
+                 style = "position: absolute; top: 0; left: 0; width: 100%; height: 100%;",
                   imageOutput("manhattan_plot_base", height = "100%", width = "100%")
-                  
-                ),
-                
+                 ),
                 div(
-                  
                   style = "position: absolute; top: 25px; left: 10px; width: 100%; height: 100%;",
-                  
-                  plotlyOutput("manhattan_plot_interactive_layer", height = "100%", width = "100%")
-                  
+                       plotlyOutput("manhattan_plot_interactive_layer", height = "100%", width = "100%")
                 )
-                
               ),
-              hr(),
-              
-              fluidRow(
-                
-                style = "margin-top: 25px;",
-                
-                column(6,
-                       
-                       h4("Study Details"),
-                       
-                       tableOutput("study_details_table"),
-                       
-                ),
-                
-                column(6,
-                       
-                       h4(),
-                       
-                       withSpinner(imageOutput("qq_plot", height = "450px"))
-                       
-                )
-              )
-    ),
-   
+             hr(),
+        fluidRow(
+          style = "margin-top: 45px;", # Adds a little space after the line
+          column(6,
+                 card(
+                   h4("Study Details"),
+                   tableOutput("study_details_table"),
+                   hr(),
+                   uiOutput("snp_specific_plots_ui")
+                 )
+          ),
+          column(6,
+                 card(
+                   withSpinner(imageOutput("qq_plot", height = "auto", width = "100%"))
+                 )
+          ) 
+        )
+        ),     
+    
+
      nav_panel("Top Significant Hits", card(
       card_header("Top Significant Hits"),
-      withSpinner(DT::dataTableOutput("summary_table"))
+      withSpinner(DT::dataTableOutput("summary_table")),
+      downloadButton("download_summary_btn", "Download Table", class = "btn-success mt-3")
     )),
    
      nav_panel("Cross-Phenotype Search", card(
       card_header("Results for Searched SNP"), withSpinner(DT::dataTableOutput("cross_pheno_table")),
       downloadButton("download_cross_pheno", "Download Results", class = "btn-success mt-3")
     ))
-  )
+  ) 
 )
 
 # --- 4. SERVER ---
 server <- function(input, output, session) {
-  ## 4.1: Initial Setup & Connections
+  snp_info_to_display <- reactiveVal(NULL)
   calibration_df <- readr::read_csv("calibration_settings.csv", col_types = cols(
     StudyID = col_character(),
     left_padding = col_double(),
@@ -330,9 +315,19 @@ server <- function(input, output, session) {
   observeEvent(event_data("plotly_click", source = "interactive_layer_source"), {
     clicked_marker <- event_data("plotly_click", source = "interactive_layer_source")$customdata
     updateTextInput(session, "marker_search", value = clicked_marker)
+    query <- sprintf("SELECT P_value FROM `%s` WHERE MarkerName = ?", input$study_selector)
+    snp_data <- dbGetQuery(interactive_con, query, params = list(clicked_marker))
+    
+    is_sig <- !is.null(snp_data$P_value) && snp_data$P_value < 5e-8
+    
+    # 3. Update the reactiveVal to trigger the plot display
+    snp_info_to_display(
+      list(
+        marker = clicked_marker,
+        is_significant = is_sig
+      )
+    )
   }, ignoreNULL = TRUE)
-  cross_pheno_results <- reactiveVal(data.frame())
-  
   # Marker Name search button logic
   observeEvent(input$search_marker_button, {
     req(input$marker_search)
@@ -393,6 +388,28 @@ server <- function(input, output, session) {
     list(src = file.path("www", paste0("qq_", input$study_selector, ".png")), contentType = 'image/png', width = "100%")
   }, deleteFile = FALSE)
   
+  # --- SNP-Specific Plot Rendering ---
+  output$snp_specific_plots_ui <- renderUI({
+   info <- snp_info_to_display()
+   req(info, info$is_significant)
+   qq_plot_filename <- paste0("qq_", input$study_selector, ".png")
+   tagList(
+     h4("LocusZoom Plot (Placeholder)"),
+     tags$img(src = qq_plot_filename, width = "100%"),
+     hr(),
+     h4("Forest Plot (Placeholder)"),
+     tags$img(src = qq_plot_filename, width = "100%")
+   )
+  })
+  
+  output$download_summary_btn <- downloadHandler(
+    filename = function() {
+      paste0(input$study_selector, "_top_hits.csv")
+    },
+    content = function(file) {
+      write.csv(summary_data(), file, row.names = FALSE)
+    }
+  )
   output$download_cross_pheno <- downloadHandler(
     filename = function() {
       if (!is.null(input$pos_search) && input$pos_search > 0) {
@@ -411,4 +428,3 @@ server <- function(input, output, session) {
 
 # --- 5. RUN ---
 shinyApp(ui, server)
-
