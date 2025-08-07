@@ -1,0 +1,29 @@
+Easiest Method I have used has been the mobaXterm terminal, for whatever reason its best for 
+lauching a version of Rstudio that is able to access the Posit server. However it is SHITTY at copy/paste things so you can
+only do like 3 lines at a time
+
+Login: `ssh -X hafter01@minerva.hpc.mssm.edu`
+JobSubmit: `bsub -Is -XF -n 3 -P acc_AsgariLab -q premium -W 08:00 -R "rusage[mem=128000] span[hosts=1]" /bin/bash
+Access R: ml proxies
+          ml rstudio/2024.09.1
+          rstudio
+
+within rstudio
+
+/AsgariLab/RechumaHafter/gwas_viewer:
+    -shiny_frontend
+        -app.R
+        -calibration_settings.csv
+        -chr_map_data.rds
+        -interactive_hits.sqlite
+        -www
+    -backend_api
+        -api_1
+        -api_2
+        -api_3
+    -data_prep_scripts
+        -create_chromosome_dbs.R
+        -create_all_indexes.R
+        -create_marker_index.R
+        -create_summary_sqlite.R
+        -create_map.R
