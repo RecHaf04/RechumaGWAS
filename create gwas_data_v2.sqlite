@@ -8,7 +8,7 @@ library(purrr) # For safely handling loops
 # --- 2. Configuration ---
 
 # The path to the V2 database file we are creating
-database_file_path <- "gwas_data_v2.sqlite"
+database_file_path <- "/sc/arion/projects/AsgariLab/RechumaHafter/gwas_data_v2.sqlite"
 
 # The base path where all the individual GWAS data folders are located.
 base_data_path <- "/sc/arion/projects/AsgariLab/abhijith/gwas_All_ID/saige_gwas"
