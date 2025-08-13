@@ -19,12 +19,12 @@ This application provides a high-performance, interactive web interface for expl
 The architecture consists of a frontend Shiny application and a backend powered by Plumber APIs and sharded SQLite databases.
 
 -   `app.R`: The main Shiny application script containing all UI and Server logic.
--   **Backend Data (`chr_?.sqlite`)**: The full GWAS summary statistics are sharded into separate SQLite databases for each chromosome. This is the ultimate source of truth.
+-   **Backend Data (`chr_?.sqlite`)**: The full GWAS summary statistics are sharded into separate SQLite databases for each chromosome. This is the ultimate source of truth. There is an index file for each chr by position search within the api folders, and an online index that refreshes when you launch the api for the markername search.
 -   **Plumber APIs**: A set of Plumber APIs that provide endpoints to query the `chr_?.sqlite` databases. The Shiny app communicates with these APIs.
 -   `www/`: A folder containing pre-rendered static PNGs for the Manhattan and QQ plots of each study.
 -   `interactive_hits.sqlite`: A lightweight, local SQLite database containing only the significant hits (`P < 1e-5`) for all studies. This file is bundled with the Shiny app and is the key to its speed.
 -   `calibration_settings.csv`: individual settings for each dataset to allow for exact accuracy when hovering over manhattan plots
--   **Helper Scripts**: Scripts are used offline to process data and generate assets for the app.
+-   **Data Prep Scripts**: Scripts are used offline to process data and generate assets for the app.
 
 ---
 
@@ -53,8 +53,11 @@ Now that the raw data is in the main database, you must re-run the three main pr
 Run these scripts from your R console in the following order:
 ```R
       source("data_prep_scripts/create_chromosome_dbs.R")
+
     source("data_prep_scripts/create_all_indexes.R")
+
     source("data_prep_scripts/create_summary_sqlite.R")
+
     source(prepare_interactive_db.R)
 ```
 
