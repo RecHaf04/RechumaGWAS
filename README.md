@@ -1,95 +1,97 @@
-
 # GWAS Interactive Visualization App
 
 This application provides a high-performance, interactive web interface for exploring and comparing results from multiple Genome-Wide Association Studies (GWAS). It is built with R Shiny and is designed for fast, responsive data exploration.
 
 ## Core Features
 
--   **Interactive Manhattan Plot**: A hybrid plot system displays a static, pre-rendered image for fast initial loading, with an invisible overlay of significant points for interactivity.
-    -   **Hover**: Hover over any significant point (`P < 1e-5`) to instantly see its MarkerName.
-    -   **Click**: Click any significant point to auto-populate its MarkerName into the cross-phenotype search bar.
--   **High Performance**: The interactive layer is powered by a pre-computed local SQLite database, ensuring the app remains fast and responsive regardless of the full dataset size.
--   **Cross-Phenotype Search**: Instantly search for associations for a specific SNP across all studies in the database, either by MarkerName or by genomic position.
--   **Study Summaries**: View key metadata for each study and browse a table of top significant hits.
--   **QQ Plots**: View pre-rendered QQ plots for each study.
--  **LocusZoom/Forest Plots**: for applicable sets with genome significant points
+-   **Interactive Manhattan Plot**: Hybrid plot system displays a static, pre-rendered PNG for fast initial loading with an invisible overlay of significant points for interactivity.
+-   **High Performance**: Powered by a pre-computed local SQLite database of significant hits, ensuring the app remains fast and responsive. The backend API uses a sharded database architecture with pre-built indexes.
+-   **Dynamic Hover and Click**: Hover over significant points to view MarkerNames and click to auto-populate the cross-phenotype search bar.
+-   **Cross-Phenotype Search**: Search for SNP associations across all studies by MarkerName or genomic position.
+-   **Top Significant Hits**: Display dataset-specific points by descending -log10P
+-   **Locus/Forest Plots**: For genome-wide significant SNPs, display pre-rendered LocusZoom and Forest plots. (in process)
+-   **Calibration Mode**: Tool to allow for precise alignement of the interactive layer. 
+
 ---
 ## Project Structure & Architecture
 
-The architecture consists of a frontend Shiny application and a backend powered by Plumber APIs and sharded SQLite databases.
 
 -   `app.R`: The main Shiny application script containing all UI and Server logic.
--   **Backend Data (`chr_?.sqlite`)**: The full GWAS summary statistics are sharded into separate SQLite databases for each chromosome. This is the ultimate source of truth. There is an index file for each chr by position search within the api folders, and an online index that refreshes when you launch the api for the markername search.
--   **Plumber APIs**: A set of Plumber APIs that provide endpoints to query the `chr_?.sqlite` databases. The Shiny app communicates with these APIs.
--   `www/`: A folder containing pre-rendered static PNGs for the Manhattan and QQ plots of each study.
--   `interactive_hits.sqlite`: A lightweight, local SQLite database containing only the significant hits (`P < 1e-5`) for all studies. This file is bundled with the Shiny app and is the key to its speed.
--   `calibration_settings.csv`: individual settings for each dataset to allow for exact accuracy when hovering over manhattan plots
--   **Data Prep Scripts**: Scripts are used offline to process data and generate assets for the app.
+-   **Data Prep Scripts**: Offline scripts used to process raw data and generate all necessary assets.
+-   **Backend Data (`gwas_data_v2.sqlite`, `chr_?.sqlite`)**: The full GWAS summary statistics are stored in a master database and sharded into separate databases for each chromosome.
+-   **Plumber APIs**: Provide endpoints to query the `chr_?.sqlite` databases.
+-   `www/`: Containing pre-rendered static PNGs for the Manhattan and QQ plots of each study.
+-   `interactive_hits.sqlite`: Local database containing only the significant hits for all studies, bundled with the Shiny app.
+-   `calibration_settings.csv`: A configuration file that stores the precise alignment values for each study's interactive plot layer.
 
 ---
 
 ## How to Add a New Dataset
 
-Adding a new dataset involves a lot of steps, more than there are in the deepest subways station. Follow these steps in order.
+This guide outlines the complete pipeline for adding a new GWAS dataset, or for modeling the application using new datasets. Follow these steps in the correct order.
 
-### Prerequisites
+### **Stage 1: Update Master Database & Generate Backend Files**
 
-1.  **Raw Data:** GWAS summary statistics must be in a flat file format (e.g., `.csv`, `.tsv`) with at least the following columns: `Chromosome`, `Position`, `P_value`.
-2.  **Required Columns:** The data preparation scripts require the following columns to be present and named:
-    * `Chromosome`
-    * `Position`
-    * `P_value`
-    * `LOG10P` 
-
-### Step 1: Add the New Dataset to the Main Database
-
-The first step is to add your new, cleaned summary statistics as a new table inside the main `gwas_data_v2.sqlite` database.
- Run the file titled `create gwas_data_v2.sqlite` Currently it is 185.5 gb. 
-
-### Step 2: Re-run the Data Preparation Pipeline
-
-Now that the raw data is in the main database, you must re-run the three main processing scripts
-
-Run these scripts from your R console in the following order:
-```R
-      source("data_prep_scripts/create_chromosome_dbs.R")
-
-    source("data_prep_scripts/create_all_indexes.R")
-
-    source("data_prep_scripts/create_summary_sqlite.R")
-
-    source(prepare_interactive_db.R)
+1.  **Add to Master Database**: The first step is to add your new, cleaned summary statistics as a new table inside the main `gwas_data_v2.sqlite` database. The name of the new table must be the `StudyID` for the new dataset. Currently with all online datasets, the file is 185.5 GB. 
+```r
+source("make_gwas_data_v2.R")
 ```
 
-### Step 3: Pre-render the New Plots
-
-You must generate the Manhattan and QQ plot images for your new study.
-
-1.  **Add your new study** to the script that generates the plots, render_all_plots.R
-2.  **Run the plot generation script.** This will create the new `.png` files and save them in the `www` folder of the frontend application.
-
-### Step 4: Update the Shiny App Configuration
-
-The frontend app needs to be told that a new study exists so it can be added to the dropdown menu.
-
-1.  **Open the `app.R` file** for the frontend application.
-2.  **Find the `dataset_catalog` list** at the top of the file.
-3.  **Add a new entry** for your study. The `id` must exactly match the table name you created for the new dataset.
-    ```R
-    dataset_catalog <- list(
-      # ... other studies ...
-      list(id = "my_new_study_2025", trait = "My New Study 2025")
-    )
+2.  **Create Chromosome Databases**: Run the script that processes the master `gwas_data_v2.sqlite` and generates the updated, sharded `chr_?.sqlite` files and a summary file. This script should overwrite the old chromosome-specific databases.
+    ```r
+    source("data_prep_scripts/create_chromosome_dbs.R")
+    source("data_prep_scripts/create_summary_sqlite.R")
     ```
-*Change the color of the interactive points in plotly from 'transparent' to 'red', change the layout from 'current_settings' to 'input' and remove the hashtags from the calibration logic in the UI. Then run app, go to the newly added dataset, and adjust sliders until plotted points perfectly match the png. then put those numbers in under the dataset name in the `calibration_settings.csv` file, save, turn off the calibration mode, make the points transparent again, and get ready to deploy.
 
-### Step 5: Re-deploy the APIs and the App
+3.  **Create All Indexes**: Run the script that creates the necessary `Position` and `MarkerName` indexes on the new `chr_?.sqlite` files, as well as the companion `chr_?_index.sqlite` files.
+    ```r
+    source("data_prep_scripts/run_indexing.R")
+    ```
 
-Finally, you must re-deploy the updated components to the Posit Connect server.
+### **Stage 2: Deploy Backend & Generate Frontend Assets**
 
-1.  **Re-deploy the APIs:** Because the underlying data has changed, you must re-deploy all three of your backend API bundles (`api_1`, `api_2`, `api_3`). There is a max limit of 8gb per API, so if needed, just make an api_4 folder.
-   note: the markername indices are made when you first launch the API, so it will look like a blank screen for like 3/4 min the first time you redeploy the API. 
-3.  **Re-deploy the Frontend:** Because you've updated the `app.R` and added new plot images to the `www` folder, you must re-deploy the frontend application.
+4.  **Re-deploy Plumber APIs**: With the backend databases updated and re-indexed, you must re-deploy all three of your backend API bundles (`api_1`, `api_2`, `api_3`). 
+```r
+#In R Console
+rsconnect::deployApp(appDir = "api_1", appName = "api_1")
+rsconnect::deployApp(appDir = "api_2", appName = "api_2")
+rsconnect::deployApp(appDir = "api_3", appName = "api_3")
+```
 
-When it inevitably fails, congrats! You are now one of my elite employees. Lol good luck fixing things.
+5.  **Render New Plot Images**: Generate the static PNGs for your new study.
+    -   Update your `render_all_plots.R` script to include the new study in its list.
+    -   Run the script. It will query gwas_data_v2.sqlite, create the new `.png` files for any files without already preexisting images in the folder, and save them in the `www/` folder.
+```r
+source("/data_prep_scripts/render_all_plots")
+```
 
+6.  **Re-create the Interactive Hits Database**: This database powers the app's interactive layer.
+    -   Update your `prepare_interactive_db.R` script to include the new `StudyID`.
+    -   Run the script to generate a new `interactive_hits.sqlite` file:
+        ```r
+        source("prepare_interactive_db.R")
+        ```
+
+### **Stage 3: Update & Calibrate the Shiny App**
+
+7.  **Update App Metadata**:
+    -   Open `app.R` and add a new row to the `study_metadata` tibble for your new study. Ensure the `StudyID` here exactly matches the name used in all other steps.
+
+8.  **Calibrate Plot Alignment**:
+    -   set `calibration_mode` to TRUE
+    -   Move the `calibration_settings.csv` to one level up int the directory to prevent the app from restarting when you save.
+    -   Run app locally, and adjust the sliders until the points perfectly overlap the png.
+    -   Click `Save Current Settings` which automatically updates `calibration_settings.csv`
+
+### **Stage 4: Final Deployment**
+
+9.  **Finalize and Deploy**:
+    -  set `calibration_mode` to FALSE
+    -  MOVE `calibration_settings.csv` back into the `shiny_frontend` folder
+    -  redeploy the app
+    -  ```R
+       rsconnect::deployApp(appName = "gwas_viewer")
+       ```
+    -  rsc
+    -  
+    -      -   Re-deploy the final, updated Shiny application.
